@@ -1,9 +1,12 @@
 import typer
-from authenticate import (
+from .authenticate import (
     get_authenticated_lastfm_network,
 )  # TODO: relative import in package
 
+app = typer.Typer()
 
+
+@app.command()
 def test_authentication():
     network = get_authenticated_lastfm_network()
     user = network.get_authenticated_user()
@@ -15,4 +18,4 @@ def test_authentication():
 
 
 if __name__ == "__main__":
-    typer.run(test_authentication)
+    app()
