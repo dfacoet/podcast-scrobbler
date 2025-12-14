@@ -1,6 +1,7 @@
 import typer
 
 from .authenticate import get_authenticated_lastfm_network
+from .scrobble import scrobble
 from .top import top
 
 app = typer.Typer()
@@ -13,6 +14,7 @@ def user():
     print(f"Authenticated: {user}")
 
 
+app.command()(scrobble)
 app.command()(top)
 
 
