@@ -1,6 +1,7 @@
 import typer
 
 from .authenticate import get_authenticated_lastfm_network
+from .podcast import podcast
 from .scrobble import scrobble
 from .top import top
 
@@ -14,6 +15,7 @@ def user():
     print(f"Authenticated: {user}")
 
 
+app.command()(podcast)
 app.command()(scrobble)
 app.command()(top)
 
