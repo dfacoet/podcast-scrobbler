@@ -1,7 +1,6 @@
 import typer
-from .authenticate import (
-    get_authenticated_lastfm_network,
-)  # TODO: relative import in package
+
+from .authenticate import get_authenticated_lastfm_network
 from .top import top
 
 app = typer.Typer()

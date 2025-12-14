@@ -1,7 +1,7 @@
-import typer
 from enum import Enum
 
-from pylast import TopItem, Artist, Album, Track
+import typer
+from pylast import Album, Artist, TopItem, Track
 
 from . import get_authenticated_lastfm_network
 

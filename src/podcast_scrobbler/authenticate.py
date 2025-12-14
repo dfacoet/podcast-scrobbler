@@ -1,6 +1,6 @@
 import pylast
-from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import ValidationError
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 REQUIRED_FOR_AUTH = {
     "lastfm_api_key",
