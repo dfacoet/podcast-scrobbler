@@ -2,39 +2,11 @@ import os
 import subprocess
 import tempfile
 from datetime import datetime, timedelta
-from typing import Any
-
-from pydantic import BaseModel
+from enum import Enum
 
 from .authenticate import get_authenticated_lastfm_network
-
-
-# Arguments of pylast's Network.scrobble
-class ScrobbleArgs(BaseModel):
-    artist: str
-    title: str
-    timestamp: int
-    album: str | None = None
-    album_artist: str | None = None
-    track_number: int | None = None
-    duration: int | None = None
-    stream_id: str | None = None
-    context: str | None = None
-    mbid: str | None = None
-    chosen_by_user: bool | None = None
-
-
-class Track(BaseModel):
-    artist: str
-    title: str
-    timestamp: datetime
-    album: str | None = None
-
-    def to_kwargs(self) -> dict[str, Any]:
-        return ScrobbleArgs.model_validate(
-            self.model_dump()
-            | {"timestamp": int(self.timestamp.timestamp())}  # TODO: use serializer?
-        ).model_dump()
+from .podcast import get_podcast_episode
+from .types import Track
 
 
 def open_editor() -> str:
@@ -77,9 +49,20 @@ def scrobble_tracks(tracks: list[Track]):
     get_authenticated_lastfm_network().scrobble_many([t.to_kwargs() for t in tracks])
 
 
-def scrobble():  # TODO: options to read files etc
-    text = open_editor()
-    tracks = parse_txt(text)
+class InputMode(Enum):
+    EDITOR = "editor"
+    PODCAST = "podcast"
+
+
+def scrobble(mode: InputMode = InputMode.EDITOR):  # TODO: options to read files etc
+    match mode:
+        case InputMode.EDITOR:
+            text = open_editor()
+            tracks = parse_txt(text)
+        case InputMode.PODCAST:
+            podcast, episode = get_podcast_episode()
+            tracks = podcast.parse_episode(episode)
+
     print("Tracklist:")
     for i, t in enumerate(tracks):
         s = f"{i + 1:>2} | {t.timestamp.isoformat()} | {t.artist} - {t.title}"

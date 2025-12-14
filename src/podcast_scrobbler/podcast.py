@@ -1,3 +1,4 @@
+import re
 import urllib.request
 from abc import ABC, abstractmethod
 from datetime import datetime
@@ -6,8 +7,11 @@ from typing import Any
 
 import podcastparser
 
+from .types import Track
+
 # TODO: podcastparser uses dictionaries
 # should validate output and use pydantic models(?)
+type Episode = dict[str, Any]
 
 
 class Podcast(ABC):
@@ -16,13 +20,18 @@ class Podcast(ABC):
     def URL(self): ...
 
     @abstractmethod
-    def print_episode(self, episode: dict[str, Any]): ...
+    def print_episode(self, episode: Episode): ...
+
+    @abstractmethod
+    def parse_episode(
+        self, episode: Episode, t: datetime | None = None
+    ) -> list[Track]: ...
 
     def get(self, max_episodes: int = 0) -> dict[str, Any]:
         url = self.URL
         return podcastparser.parse(url, urllib.request.urlopen(url), max_episodes)
 
-    def get_episodes(self, max_episodes: int = 0) -> list[dict[str, Any]]:
+    def get_episodes(self, max_episodes: int = 0) -> list[Episode]:
         episodes = self.get(max_episodes)["episodes"]
         if max_episodes:
             assert len(episodes) <= max_episodes
@@ -34,16 +43,34 @@ class Battiti(Podcast):
     def URL(self):
         return "https://giuliomagnifico.github.io/raiplay-feed/feed_battiti.xml"
 
-    def print_episode(self, episode):
+    def print_episode(self, episode: Episode):
         print(f"Title: {episode['title']}")
         print(f"Published: {datetime.fromtimestamp(episode['published']).isoformat()}")
         print(f"Description:\n{episode['description']}")
+
+    def parse_line(self, s: str, t: datetime) -> Track | None:
+        s = s.strip()
+        artist_title = s.split(",", 1)
+        if len(artist_title) < 2:
+            print(f"Skipped parsing: {s}")
+            return None
+        artist = artist_title[0].strip().title()
+        title = artist_title[1].split(", da", 1)[0].strip().title()
+        album_match = re.search(r'da\s+"(.*?)"', s)
+        album = album_match.group(1).title() if album_match else None
+
+        return Track(artist=artist, title=title, timestamp=t, album=album)
+
+    def parse_episode(self, episode: Episode, t: datetime | None = None) -> list[Track]:
+        t = t or datetime.now()
+        lines = [ss for s in episode["description"].split("//") if (ss := s.strip())]
+        return [track for s in lines if (track := self.parse_line(s, t)) is not None]
 
 
 KNOWN_PODCASTS: dict[str, Podcast] = {"Battiti": Battiti()}
 
 
-def podcast():
+def get_podcast_episode() -> tuple[Podcast, Episode]:
     print("Podcasts available:")
     for t in sorted(KNOWN_PODCASTS):
         print(t)
@@ -68,5 +95,10 @@ def podcast():
             print(f"{k} is not a number")
         except KeyError:
             print(f"Only {len(episodes)} available")
+    return podcast, episode
+
+
+def podcast():
+    podcast, episode = get_podcast_episode()
     print("Selected episode:")
     podcast.print_episode(episode)
