@@ -72,15 +72,26 @@ KNOWN_PODCASTS: dict[str, Podcast] = {"Battiti": Battiti()}
 
 def get_podcast_episode() -> tuple[Podcast, Episode]:
     print("Podcasts available:")
-    for t in sorted(KNOWN_PODCASTS):
-        print(t)
+    podcast_titles = sorted(KNOWN_PODCASTS)
+    for i, t in enumerate(podcast_titles):
+        print(f"{i:>3}. {t}")
     while True:
-        title = input("Pick a podcast: ")
+        podcast_text = input("Pick a podcast: ")
+        try:
+            id = int(podcast_text)
+        except ValueError:
+            title = podcast_text
+        else:
+            try:
+                title = podcast_titles[id]
+            except IndexError:
+                print(f"Invalid index {id}")
+                continue
         try:
             podcast = KNOWN_PODCASTS[title]
             break
         except KeyError:
-            print("Unknown podcast title")
+            print("Unknown podcast title {podcast}")
             continue
     episodes = podcast.get_episodes()
     print("Episodes: ")
